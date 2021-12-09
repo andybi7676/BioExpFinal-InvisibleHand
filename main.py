@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtCore import Qt
 from PyQt5 import QtBluetooth
 
-class SignalReaderBth(QWidget):
+class SignalReaderBthConn(QWidget):
 
     def __init__(self, addr, decisionMaker=None):
         self.addr = addr
@@ -49,7 +49,7 @@ class SignalReaderBth(QWidget):
             else:
                 self.log(f"received signal: {signal}, but cannot send to decisionMaker")
 
-class DecisionSenderBth(QWidget):
+class DecisionSenderBthConn(QWidget):
 
     def __init__(self, addr):
         super().__init__()
@@ -95,7 +95,7 @@ class DecisionMaker():
         super().__init__()
         self.decisionSender = decisionSender
         self.makingDecision = False
-        self.decisions = ['F', 'B', 'L', 'R', 'A', 'D']
+        self.decisions = ['F', 'B', 'L', 'R', 'A', 'D', 'S']
         pass
     
     def log(self, content):
@@ -120,9 +120,9 @@ def main():
         os.environ['QT_EVENT_DISPATCHER_CORE_FOUNDATION'] = '1'
 
     app = QApplication(sys.argv)
-    decisionSender = DecisionSenderBth("00:13:EF:00:27:9D") # BioExpG5-2
+    decisionSender = DecisionSenderBthConn("00:13:EF:00:27:9D") # BioExpG5-2
     decisionMaker = DecisionMaker(decisionSender=decisionSender)
-    signalReceiver = SignalReaderBth("98:D3:81:FD:46:F2", decisionMaker=decisionMaker) # BioExpG5-1
+    signalReceiver = SignalReaderBthConn("98:D3:81:FD:46:F2", decisionMaker=decisionMaker) # BioExpG5-1
 
     sys.exit(app.exec_())
 
