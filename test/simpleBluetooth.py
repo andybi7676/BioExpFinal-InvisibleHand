@@ -16,7 +16,6 @@ class bluetoothConnection(QWidget):
 
     def connectToRobot(self):
         self.sock = QtBluetooth.QBluetoothSocket(QtBluetooth.QBluetoothServiceInfo.RfcommProtocol)
-
         self.sock.connected.connect(self.connectedToBluetooth)
         self.sock.readyRead.connect(self.receivedBluetoothMessage)
         self.sock.disconnected.connect(self.disconnectedFromBluetooth)
@@ -47,7 +46,8 @@ def main():
         os.environ['QT_EVENT_DISPATCHER_CORE_FOUNDATION'] = '1'
 
     app = QApplication(sys.argv)
-    btc = bluetoothConnection("00:13:EF:00:27:9D")
+    btc1 = bluetoothConnection("00:13:EF:00:27:9D")
+    btc2 = bluetoothConnection("98:D3:81:FD:46:F2")
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
