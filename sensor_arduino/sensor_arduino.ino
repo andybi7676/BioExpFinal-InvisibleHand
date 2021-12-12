@@ -1,5 +1,5 @@
 #include <SoftwareSerial.h>
-SoftwareSerial Bluetooth(2, 3);
+SoftwareSerial Bluetooth(2, 3); //2 <-> Tx , 3 <-> Rx
 
 char c=' ';
 void setup() 

@@ -42,7 +42,7 @@ class SignalReaderBthConn(QWidget):
 
     def receivedBluetoothMessage(self):
         while self.sock.canReadLine():
-            signal = str(self.sock.readLine(), "utf-8").strip()
+            signal = str(self.sock.readLine())[2:-3].strip()
             if not self.decisionMaker.makingDecision:
                 self.log(f'received signal: {signal}, sent to decisionMaker')
                 self.decisionMaker.makeDecision(signal)
@@ -57,13 +57,15 @@ class DecisionSenderBthConn(QWidget):
         self.connectToRobot()
         self.win = QWidget()
         self.win.show()
+        self.connected = False
     
     def log(self, content):
         print(f"[ DICISION_SENDER ] - {content}")
     
     def sendDecision(self, decision: str):
-        self.sock.write(decision.encode())
-        self.log(f"sent decision: \'{decision}\'")
+        if (self.connected):
+            self.sock.write(decision.encode())
+            self.log(f"sent decision: \'{decision}\'")
 
     def connectToRobot(self):
         self.sock = QtBluetooth.QBluetoothSocket(QtBluetooth.QBluetoothServiceInfo.RfcommProtocol)
@@ -78,6 +80,7 @@ class DecisionSenderBthConn(QWidget):
         self.log(self.sock.errorString())
 
     def connectedToBluetooth(self):
+        self.connected = True
         self.log("connected")
         self.sock.write('connnection from pc'.encode())
 
@@ -86,7 +89,7 @@ class DecisionSenderBthConn(QWidget):
 
     def receivedBluetoothMessage(self):
         while self.sock.canReadLine():
-            line = str(self.sock.readLine(), "utf-8").strip()
+            line = str(self.sock.readLine(), encoding='utf-8').strip()
             self.log(line)
 
 class DecisionMaker():
@@ -96,20 +99,36 @@ class DecisionMaker():
         self.decisionSender = decisionSender
         self.makingDecision = False
         self.decisions = ['F', 'B', 'L', 'R', 'A', 'D', 'S']
+        self.prevDecision = 'S'
         pass
     
     def log(self, content):
         print(f"[ DICISION_MAKER ] - {content}")
 
     def makeDecision(self, signal):
+        roll = int(signal.split(' ')[0])
+        pitch = int(signal.split(' ')[1])
         self.makingDecision = True
         decision = ''
-        if (signal.upper() in self.decisions):
-            decision = signal.upper()
-        else:
-            decision = random.choice(self.decisions)
+        threshold = 25
+        decision = 'S'
+        srange = range(-threshold, threshold)
+        if roll > threshold and pitch in srange:
+            decision = 'B'
+        elif roll < -threshold and pitch  in srange:
+            decision = 'F'
+        elif pitch > threshold and roll in srange:
+            decision = 'L'
+        elif pitch < -threshold and roll in srange:
+            decision = 'R'
+        # if (signal.upper() in self.decisions):
+        #     decision = signal.upper()
+        # else:
+        #     decision = random.choice(self.decisions)
         self.log(f'made decision: \'{decision}\'')
-        self.decisionSender.sendDecision(decision)
+        if self.prevDecision != decision:
+            self.decisionSender.sendDecision(decision)
+        self.prevDecision = decision
         self.makingDecision = False
 
 
