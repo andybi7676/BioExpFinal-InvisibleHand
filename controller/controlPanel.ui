@@ -19,9 +19,15 @@
      <rect>
       <x>130</x>
       <y>180</y>
-      <width>91</width>
+      <width>71</width>
       <height>31</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Agency FB</family>
+      <pointsize>12</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>Control</string>
@@ -71,19 +77,6 @@
      <enum>Qt::Vertical</enum>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox">
-    <property name="geometry">
-     <rect>
-      <x>330</x>
-      <y>265</y>
-      <width>171</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Activated</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="speedLabel">
     <property name="geometry">
      <rect>
@@ -114,8 +107,8 @@
     <property name="geometry">
      <rect>
       <x>270</x>
-      <y>312</y>
-      <width>75</width>
+      <y>280</y>
+      <width>71</width>
       <height>31</height>
      </rect>
     </property>
@@ -129,9 +122,9 @@
    <widget class="QPushButton" name="rightPushButton">
     <property name="geometry">
      <rect>
-      <x>370</x>
-      <y>312</y>
-      <width>75</width>
+      <x>410</x>
+      <y>280</y>
+      <width>71</width>
       <height>31</height>
      </rect>
     </property>
@@ -140,6 +133,44 @@
     </property>
     <property name="checkable">
      <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QSlider" name="modeSlider">
+    <property name="geometry">
+     <rect>
+      <x>370</x>
+      <y>220</y>
+      <width>16</width>
+      <height>160</height>
+     </rect>
+    </property>
+    <property name="minimum">
+     <number>-1</number>
+    </property>
+    <property name="maximum">
+     <number>1</number>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Vertical</enum>
+    </property>
+   </widget>
+   <widget class="QLabel" name="modeLabel">
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>180</y>
+      <width>91</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Agency FB</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Mode: 0</string>
     </property>
    </widget>
   </widget>

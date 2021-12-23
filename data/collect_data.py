@@ -40,8 +40,9 @@ class SignalBthConn():
     def receivedBluetoothMessage(self):
         while self.sock.canReadLine():
             signal = str(self.sock.readLine())[2:-3].strip()
-            if (self.dataCollector and not self.dataCollector.pauseHandling):
-                self.dataCollector.handleNewSignal(signal)
+            print(signal)
+            # if (self.dataCollector and not self.dataCollector.pauseHandling):
+            #     self.dataCollector.handleNewSignal(signal)
 
 class DataCollector():
 

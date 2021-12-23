@@ -13,7 +13,7 @@ String newState = "";
 struct State {
   int accel;
   int dir;
-  bool act;
+  int mode;
   bool left;
   bool right;
 };
@@ -33,7 +33,7 @@ void parseStringToCurState(String newState) {
           curState.dir = newState.substring(start, e).toInt();
           break;
         case 2:
-          curState.act = newState.substring(start, e)=="T" ? true : false;
+          curState.mode = newState.substring(start, e).toInt();
           break;
         case 3:
           curState.left = newState.substring(start, e)=="T" ? true : false;
@@ -49,7 +49,7 @@ void parseStringToCurState(String newState) {
     }
   }
   Serial << "State Changed: ("    << curState.accel << ", " \
-         << curState.dir  << ", " << curState.act   << ", " \
+         << curState.dir  << ", " << curState.mode   << ", " \
          << curState.left << ", " << curState.right << ")\n";
 }
 

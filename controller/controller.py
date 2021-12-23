@@ -19,12 +19,12 @@ class ControlPanel(QtWidgets.QMainWindow):
     def setup_control(self):
         self.speed = self.ui.speedSlider.value()
         self.direction = self.ui.directionSlider.value()
-        self.activated = bool(self.ui.checkBox.checkState())
+        self.mode = self.ui.modeSlider.value()
         self.leftLight = bool(self.ui.leftPushButton.isChecked())
         self.rightLight = bool(self.ui.rightPushButton.isChecked())
         self.ui.speedSlider.valueChanged.connect(self.changeSpeed)
         self.ui.directionSlider.valueChanged.connect(self.changeDirection)
-        self.ui.checkBox.clicked.connect(self.handleActivation)
+        self.ui.modeSlider.valueChanged.connect(self.changeMode)
         self.ui.leftPushButton.clicked.connect(self.handleLeftButton)
         self.ui.rightPushButton.clicked.connect(self.handleRightButton)
 
@@ -38,8 +38,9 @@ class ControlPanel(QtWidgets.QMainWindow):
         self.ui.directionLabel.setText(f"{self.direction}")
         self.sendState()
     
-    def handleActivation(self):
-        self.activated = bool(self.ui.checkBox.checkState())
+    def changeMode(self):
+        self.mode = self.ui.modeSlider.value()
+        self.ui.modeLabel.setText(f"Mode: {self.mode}")
         self.sendState()
 
     def handleLeftButton(self):
@@ -55,10 +56,10 @@ class ControlPanel(QtWidgets.QMainWindow):
             print("No decision sender!!")
             return
         if (self.decisionSender.canSend):
-            print(f"sendState: ({self.speed}, {self.direction}, {self.activated.__repr__()[0]}, {self.leftLight.__repr__()[0]}, {self.rightLight.__repr__()[0]})")
-            self.decisionSender.sendDecision(f"{self.speed} {self.direction} {self.activated.__repr__()[0]} {self.leftLight.__repr__()[0]} {self.rightLight.__repr__()[0]}\n")
+            print(f"sendState: ({self.speed}, {self.direction}, {self.mode}, {self.leftLight.__repr__()[0]}, {self.rightLight.__repr__()[0]})")
+            self.decisionSender.sendDecision(f"{self.speed} {self.direction} {self.mode} {self.leftLight.__repr__()[0]} {self.rightLight.__repr__()[0]}\n")
         else:
-            print(f"Can not send state: ({self.speed}, {self.direction}, {self.activated.__repr__()[0]}, {self.leftLight.__repr__()[0]}, {self.rightLight.__repr__()[0]})")
+            print(f"Can not send state: ({self.speed}, {self.direction}, {self.mode}, {self.leftLight.__repr__()[0]}, {self.rightLight.__repr__()[0]})")
 
 class DecisionSenderBthConn():
 
@@ -106,8 +107,8 @@ class DecisionSenderBthConn():
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    # bthSender = DecisionSenderBthConn("98:D3:81:FD:46:F2")
-    bthSender = DecisionSenderBthConn("00:13:EF:00:27:9D")
+    bthSender = DecisionSenderBthConn("98:D3:81:FD:46:F2")
+    # bthSender = DecisionSenderBthConn("00:13:EF:00:27:9D")
     window = ControlPanel(bthSender)
     window.show()
     sys.exit(app.exec_())
