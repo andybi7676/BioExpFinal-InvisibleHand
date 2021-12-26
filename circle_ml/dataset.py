@@ -23,7 +23,7 @@ class CircleDataset(Dataset):
         data_array, label = self.data[index]
         return torch.from_numpy(data_array), torch.tensor(label)
 
-    def get_data(data_dir):
+    def get_data(self, data_dir):
         data_list = []
         for label_dir in os.listdir(data_dir):
             label_path = os.path.join(data_dir, label_dir)
