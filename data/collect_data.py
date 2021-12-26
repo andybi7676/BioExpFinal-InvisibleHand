@@ -13,7 +13,7 @@ ACC_PRECISION_FACTOR = 1000
 THRESHOLD_INIT = 0.08
 STATIC_LIMIT = 5
 ACC_AVG_INIT = 0.98 
-VALID_CLASSNAMES = ['backward', 'stop', 'forward']
+VALID_CLASSNAMES = ['backward', 'others', 'forward']
 
 root_dir = './raw_data'
 
@@ -30,7 +30,8 @@ class CollectDataWindow(QtWidgets.QMainWindow):
         self.curAction = []
         self.isRecording = False
         self.className = 'null'
-        self.actionsDict = {'backward':[], 'stop':[], 'forward':[]}
+        self.actionsDict = {}
+        for className in VALID_CLASSNAMES: self.actionsDict[className] = []
         self.setup_control()
 
     def setup_control(self):
@@ -92,6 +93,7 @@ class CollectDataWindow(QtWidgets.QMainWindow):
     def dumpData(self):
         for className in VALID_CLASSNAMES:
             cur_dir = os.path.join(root_dir, className)
+            if not os.path.exists(cur_dir): os.makedirs(cur_dir)
             actions = glob.glob(f'{cur_dir}/{className}-*.npy')
             actions = sorted(actions, key=lambda f_pth: int(f_pth.split('-')[-1].split('.')[0]))
             start_id = 0
