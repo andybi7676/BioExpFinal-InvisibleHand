@@ -40,11 +40,11 @@ void loop() {
 //    Serial.print("\tangleY : ");Serial.print(mpu6050.getAngleY());
 //    Serial.print("\tangleZ : ");Serial.println(mpu6050.getAngleZ());
 //    Serial.println("=======================================================\n");
-    String signalToSend = String((int)(accX*100)) + " " + String((int)(accY*100)) + " " + String((int)(accZ*100)) + " " \
-                        + String((int)mpu6050.getAngleX()) + " " + String((int)mpu6050.getAngleY()) + String((int)mpu6050.getAngleZ()) + "\n";
+    String signalToSend = String((int)(accX*1000)) + " " + String((int)(accY*1000)) + " " + String((int)(accZ*1000)) + " " \
+                        + String((int)mpu6050.getAngleX()) + " " + String((int)mpu6050.getAngleY()) + " " + String((int)mpu6050.getAngleZ()) + "\n";
     Serial.print(signalToSend);
-    Serial.println(accMag);
-//    Bluetooth.print(signalToSend);
+//    Serial.println(accMag);
+    Bluetooth.print(signalToSend);
     timer = millis();
     accX = 0.0;
     accY = 0.0;
