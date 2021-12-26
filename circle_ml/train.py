@@ -207,7 +207,7 @@ if __name__ == "__main__":
                         default=cpu_count()-1,
                         help='The number of worker threads for preprocessing')
     parser.add_argument('--batch_size', '-b', metavar='BATCH', type=int,
-                        default=32,  help='training batch size')
+                        default=1,  help='training batch size')
     parser.add_argument('--epochs', '-e', metavar='VALID', type=int,
                         default=100,  help='training segment length')
     args = parser.parse_args()
