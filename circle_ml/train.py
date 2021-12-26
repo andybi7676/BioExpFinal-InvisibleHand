@@ -113,7 +113,8 @@ def main(
     valid_steps = len(train_loader)
     save_steps = valid_steps
     total_steps = valid_steps * epochs
-    model = ResNetClassifier(label_num=3,
+    model = ResNetClassifier(
+        label_num=3,
         in_channels=[6, 16, 16],
         out_channels=[16, 16, 8],
         downsample_scales=[1, 1, 1],
