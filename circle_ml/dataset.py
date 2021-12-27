@@ -11,8 +11,9 @@ from torch.utils.data import Dataset
 
 
 class CircleDataset(Dataset):
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, augmentation = True):
         self.data_dir = data_dir
+        self.augmentation = augmentation
 
         self.data = self.get_data(data_dir)
 
@@ -21,7 +22,22 @@ class CircleDataset(Dataset):
 
     def __getitem__(self, index):
         data_array, label = self.data[index]
-        data_array = torch.from_numpy(data_array.astype(np.float32))
+
+        if self.augmentation:
+            rand_len = random.randint(20, 80)
+            if data_array.shape[0] > rand_len:
+                del_len = data_array.shape[0] - rand_len
+                for _ in range(del_len):
+                    rand_row = random.randint(0, data_array.shape[0] - 1)
+                    data_array = np.delete(data_array, rand_row, 0)
+            elif data_array.shape[0] < rand_len:
+                insert_len = rand_len - data_array.shape[0]
+                for _ in range(insert_len):
+                    rand_num = random.randint(0, data_array.shape[0] - 1)
+                    rand_row = data_array[rand_num]
+                    data_array = np.insert(data_array, rand_num, rand_row, 0)
+                    
+        data_array = torch.from_numpy(data_array)
         return torch.FloatTensor(data_array), torch.tensor(label)
 
     def get_data(self, data_dir):
@@ -31,6 +47,7 @@ class CircleDataset(Dataset):
             for data in sorted(os.listdir(label_path)):
                 data_path = os.path.join(label_path, data)
                 data_array = np.load(data_path)
+                data_array = data_array.astype(np.float32)
                 if label_dir.endswith('forward'):
                     data_list.append((data_array, 0))
                 elif label_dir.endswith('backward'):
