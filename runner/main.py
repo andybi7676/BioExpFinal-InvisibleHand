@@ -1,5 +1,8 @@
 from const import *
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import os
 import sys
 import random
@@ -7,11 +10,12 @@ import glob
 
 from PyQt5 import QtCore, QtWidgets
 from panel.mainUI import Ui_MainWindow
-from bth_rcv import LeftSignalBthConn, RightSignalBthConn
+from bth_rcv import LeftSignalBthConn, RightSignalBthConn, DecisionSenderBthConn
+from model import ResNetClassifier
 # bth rcv
 
 class MainControlPanel(QtWidgets.QMainWindow):
-    def __init__(self):
+    def __init__(self, decisionSender: DecisionSenderBthConn=None):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -23,14 +27,20 @@ class MainControlPanel(QtWidgets.QMainWindow):
         self.right.ui = self.ui
         self.left.curState = self.curState
         self.right.curState = self.curState
-        self.decisionSender = None
+        self.decisionSender = decisionSender
         self.setupControl()
-    
+
     def setupControl(self):
         self.ui.initializeLeftPushButton.clicked.connect(self.setInitializeLeft)
         self.ui.initializeRightPushButton.clicked.connect(self.setInitializeRight)
-        pass
-        
+        self.ui.gearSlider.valueChanged.connect(self.changeGearMode)
+        self.ui.leftPushButton.clicked.connect(self.setLeftLight)
+        self.ui.rightPushButton.clicked.connect(self.setRightLight)
+    
+    def changeGearMode(self):
+        self.curState.activate = self.ui.gearSlider.value()
+        self.updateStateAndSend()
+
     def setInitializeLeft(self):
         self.left.angleOrigs = [0, 0, 0]
         self.left.initializationProgress = 0
@@ -38,8 +48,16 @@ class MainControlPanel(QtWidgets.QMainWindow):
     
     def setInitializeRight(self):
         self.right.inputOrigs = [0, 0, 0, 0, 0, 0]
-        self.right.initialzationProgress = 0
+        self.right.initializationProgress = 0
         self.right.handleState = 0
+    
+    def setLeftLight(self):
+        self.curState.left = self.ui.leftPushButton.isChecked()
+        self.updateStateAndSend()
+    
+    def setRightLight(self):
+        self.curState.right = self.ui.rightPushButton.isChecked()
+        self.updateStateAndSend()
 
     def handleLeftSignal(self, signal: str) -> None:
         if len(signal.split(' ')) != 3:
@@ -83,8 +101,8 @@ class MainControlPanel(QtWidgets.QMainWindow):
             self.prevState.activate     = self.curState.activate
             self.prevState.left         = self.curState.left
             self.prevState.right        = self.curState.right
-            if (self.decisionSender):
-                self.decisionSender.sendDicision(str(self.curState))
+            if (self.decisionSender and self.decisionSender.canSend):
+                self.decisionSender.sendDecision(str(self.curState))
             self.updateUI()
     
     def updateUI(self):
@@ -92,7 +110,6 @@ class MainControlPanel(QtWidgets.QMainWindow):
         self.ui.accelerationSlider.setValue(self.curState.acceleration)
         self.ui.directionValue.setText(str(self.curState.direction))
         self.ui.directionSlider.setValue(self.curState.direction)
-        self.ui.gearSlider.setValue(self.curState.activate)
         self.ui.gearSlider.setValue(self.curState.activate)
         self.ui.leftPushButton.setChecked(self.curState.left)
         self.ui.rightPushButton.setChecked(self.curState.right)
@@ -110,7 +127,6 @@ class State():
     
     def __str__(self) -> str:
         return f"{self.direction} {self.acceleration} {self.activate} {str(self.left)[0]} {str(self.right)[0]}\n"
-
 
 class LeftController():
     def __init__(self) -> None:
@@ -148,6 +164,28 @@ class RightController():
         self.duplicateStatic = STATIC_LIMIT
         self.ui: Ui_MainWindow = None
         self.curState: State = None
+        self.initializeModel()
+    
+    def initializeModel(self):
+        self.device = "cpu"
+        print(f"[Info]: Use {self.device} now!")
+        self.model = ResNetClassifier(
+            label_num=3,
+            in_channels=[6, 16, 16],
+            out_channels=[16, 16, 8],
+            downsample_scales=[1, 1, 1],
+            kernel_size=3,
+            z_channels=8,
+            dilation=True,
+            leaky_relu=True,
+            dropout=0.0,
+            stack_kernel_size=3,
+            stack_layers=2,
+            nin_layers=0,
+            stacks=[3, 3, 3],
+        ).to(self.device)
+        model_path = os.path.join('../circle_ml/results', 'resnet.ckpt')
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
     
     def isMoving(self) -> bool:
         return self.duplicateStatic < STATIC_LIMIT
@@ -188,7 +226,15 @@ class RightController():
 
     def verifyAction(self):
         # ml
-        
+        with torch.no_grad():
+            data_array = np.array([self.curAction])
+            data_array = data_array.astype(np.float32)
+            data_array = torch.from_numpy(data_array)
+            
+            label = self.model(torch.FloatTensor(data_array).to(self.device))
+            label = label.argmax(dim=-1).cpu().numpy()
+            print(label)
+
         minAngZ = 90
         maxAngZ = -90
         for frame in self.curAction:
@@ -196,16 +242,17 @@ class RightController():
             minAngZ = min(angZ, minAngZ)
             maxAngZ = max(angZ, maxAngZ)
         if maxAngZ > RIGHTHAND_LIGHT_ANGLE:
-            self.curState.left = True
+            self.curState.left = not self.curState.left
             print("[ RIGHTHAND ] - left light triggered!")
         if minAngZ < -RIGHTHAND_LIGHT_ANGLE:
             print("[ RIGHTHAND ] - right light triggered!")
-            self.curState.right = True        
+            self.curState.right =  not self.curState.right       
 
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    mainControlPanel = MainControlPanel()
+    decisionSender = DecisionSenderBthConn(BioExpG5_2)
+    mainControlPanel = MainControlPanel(decisionSender)
     left_bth = LeftSignalBthConn(BioExpG5_3, mainControlPanel)
     right_bth = RightSignalBthConn(BioExpG5_1, mainControlPanel)
     mainControlPanel.left_bth = left_bth
