@@ -27,7 +27,10 @@ def get_dataloader(data_dir, batch_size, n_workers):
     valid_data = random.sample(data_list, k=int(0.1 * len(data_list)))
     train_data = data_list
     for data in valid_data:
-        train_data.remove(data)
+        for i in range(len(train_data)):
+            if train_data[i] == data:
+                train_data.remove(train_data[i])
+                break
     
     trainset = CircleDataset(train_data)
     validset = CircleDataset(valid_data, augmentation=False)
