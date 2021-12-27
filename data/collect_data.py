@@ -104,6 +104,7 @@ class CollectDataWindow(QtWidgets.QMainWindow):
                 np.save(os.path.join(cur_dir, f"{className}-{end_id}.npy"), action)
                 end_id += 1
             print(f"[ DUMP ] - Totally {end_id - start_id} files dump to class \'{className}\'!!")
+            self.actionsDict[className].clear()
             
 
     def bthConnected(self):
