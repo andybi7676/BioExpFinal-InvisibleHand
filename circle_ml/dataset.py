@@ -68,7 +68,7 @@ def collate_batch(batch):
     # mel: (batch size, length, 40)
     label = list(label)
     label = torch.cat(
-        [label[i].unsqueeze(0) for i in range(label.shape)],
+        [label[i].unsqueeze(0) for i in range(len(label))],
         dim=0,
     )
     return data_seq, label
