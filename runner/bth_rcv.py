@@ -88,7 +88,7 @@ class DecisionSenderBthConn():
     def sendDecision(self, decision: str):
         if (self.connected):
             self.sock.write(decision.encode())
-            self.log(f"sent new state: \'{decision.strip('\n')}\'")
+            self.log(f"sent new state: \'{decision[:-1]}\'")
 
     def connectToRobot(self):
         self.sock = QtBluetooth.QBluetoothSocket(QtBluetooth.QBluetoothServiceInfo.RfcommProtocol)

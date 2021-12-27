@@ -56,7 +56,7 @@ class Ui_MainWindow(object):
         self.accelerationValue.setGeometry(QtCore.QRect(350, 440, 41, 20))
         self.accelerationValue.setObjectName("accelerationValue")
         self.gearSlider = QtWidgets.QSlider(self.centralwidget)
-        self.gearSlider.setEnabled(False)
+        self.gearSlider.setEnabled(True)
         self.gearSlider.setGeometry(QtCore.QRect(680, 310, 51, 281))
         self.gearSlider.setMinimum(-1)
         self.gearSlider.setMaximum(1)

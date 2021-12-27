@@ -123,10 +123,10 @@ class State():
         self.right       :bool = False
     
     def __repr__(self) -> str:
-        return f"{self.direction} {self.acceleration} {self.activate} {str(self.left)[0]} {str(self.right)[0]}\n"
+        return f"{self.acceleration} {self.direction} {self.activate} {str(self.left)[0]} {str(self.right)[0]}\n"
     
     def __str__(self) -> str:
-        return f"{self.direction} {self.acceleration} {self.activate} {str(self.left)[0]} {str(self.right)[0]}\n"
+        return f"{self.acceleration} {self.direction} {self.activate} {str(self.left)[0]} {str(self.right)[0]}\n"
 
 class LeftController():
     def __init__(self) -> None:
@@ -149,8 +149,10 @@ class LeftController():
             self.handleState  = 1
     
     def driving(self, signal: list):
-        self.curState.direction =   min(max(-5, -int( (signal[2] + self.dirAngleSeg/2   - self.angleOrigs[2]) // self.dirAngleSeg ) ), 5)
-        self.curState.acceleration =  min(max(-5, -int((signal[1] + self.accelAngleSeg/2 - self.angleOrigs[1]) // self.accelAngleSeg) ), 5)
+        dirAng = signal[2] - self.angleOrigs[2]
+        accelAng = signal[1] - self.angleOrigs[1]
+        self.curState.direction = -int(np.sign(dirAng) * min(5, abs(dirAng) // self.dirAngleSeg))
+        self.curState.acceleration =  -int(np.sign(accelAng) * min(5, abs(accelAng) // self.accelAngleSeg))
         pass
 
 class RightController():
@@ -231,8 +233,8 @@ class RightController():
             data_array = data_array.astype(np.float32)
             data_array = torch.from_numpy(data_array)
             
-            label = self.model(torch.FloatTensor(data_array).to(self.device))
-            label = label.argmax(dim=-1).cpu().numpy()
+            logits = self.model(torch.FloatTensor(data_array).to(self.device))
+            label = logits.argmax(dim=-1).cpu().numpy()
             print(label)
 
         minAngZ = 90
