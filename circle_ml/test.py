@@ -23,7 +23,7 @@ def main(
     print(f"[Info]: Use {device} now!")
 
     data_dir = os.path.abspath(data_dir)
-    dataset = CircleDataset(data_dir)
+    dataset = CircleDataset(data_dir, augmentation=False)
     dataloader = DataLoader(
         dataset,
         batch_size=1,
