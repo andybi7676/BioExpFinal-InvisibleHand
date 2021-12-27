@@ -59,9 +59,9 @@ def main(
     for data, labels in tqdm(dataloader):
         with torch.no_grad():
             data = data.to(device)
-            label = label.to(device)
+            labels = labels.cpu().numpy()
             preds = model(data)
-            preds = preds.cpu().numpy()
+            preds = preds.argmax(dim=-1).cpu().numpy()
             for pred, label in zip(preds, labels):
                 if pred == label:
                     accuracy += 1

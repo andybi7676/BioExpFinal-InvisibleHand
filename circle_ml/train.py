@@ -113,7 +113,8 @@ def main(
     valid_steps = len(train_loader)
     save_steps = valid_steps
     total_steps = valid_steps * epochs
-    model = ResNetClassifier(label_num=3,
+    model = ResNetClassifier(
+        label_num=3,
         in_channels=[6, 16, 16],
         out_channels=[16, 16, 8],
         downsample_scales=[1, 1, 1],
@@ -207,7 +208,7 @@ if __name__ == "__main__":
                         default=cpu_count()-1,
                         help='The number of worker threads for preprocessing')
     parser.add_argument('--batch_size', '-b', metavar='BATCH', type=int,
-                        default=32,  help='training batch size')
+                        default=1,  help='training batch size')
     parser.add_argument('--epochs', '-e', metavar='VALID', type=int,
                         default=100,  help='training segment length')
     args = parser.parse_args()
