@@ -39,7 +39,7 @@ class CircleDataset(Dataset):
         return torch.FloatTensor(data_array), torch.tensor(label)
 
 
-def get_data(self, data_dir):
+def get_data(data_dir):
     data_list = []
     for label_dir in os.listdir(data_dir):
         label_path = os.path.join(data_dir, label_dir)
