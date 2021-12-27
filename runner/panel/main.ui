@@ -219,6 +219,9 @@
     <property name="text">
      <string>LEFT</string>
     </property>
+    <property name="checkable">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QPushButton" name="rightPushButton">
     <property name="geometry">
@@ -232,8 +235,11 @@
     <property name="text">
      <string>RIGHT</string>
     </property>
+    <property name="checkable">
+     <bool>true</bool>
+    </property>
    </widget>
-   <widget class="QProgressBar" name="initializeProgressBar">
+   <widget class="QProgressBar" name="initializeLeftProgressBar">
     <property name="geometry">
      <rect>
       <x>140</x>
@@ -246,7 +252,7 @@
      <number>0</number>
     </property>
    </widget>
-   <widget class="QPushButton" name="initializePushButton">
+   <widget class="QPushButton" name="initializeLeftPushButton">
     <property name="geometry">
      <rect>
       <x>50</x>
@@ -257,6 +263,32 @@
     </property>
     <property name="text">
      <string>Initialize</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="initializeRightPushButton">
+    <property name="geometry">
+     <rect>
+      <x>480</x>
+      <y>80</y>
+      <width>81</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Initialize</string>
+    </property>
+   </widget>
+   <widget class="QProgressBar" name="initializeRightProgressBar">
+    <property name="geometry">
+     <rect>
+      <x>570</x>
+      <y>90</y>
+      <width>271</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="value">
+     <number>0</number>
     </property>
    </widget>
   </widget>
