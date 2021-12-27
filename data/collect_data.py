@@ -8,13 +8,13 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5 import QtBluetooth
 from dataCollectionUI import Ui_MainWindow
 
+
 FRAME_LENGTH_THRESHOLD = 20
 ACC_PRECISION_FACTOR = 1000
 THRESHOLD_INIT = 0.08
 STATIC_LIMIT = 5
 ACC_AVG_INIT = 0.98 
 VALID_CLASSNAMES = ['backward', 'others', 'forward']
-
 root_dir = './raw_data'
 
 class CollectDataWindow(QtWidgets.QMainWindow):
@@ -132,6 +132,8 @@ class CollectDataWindow(QtWidgets.QMainWindow):
             self.ui.magLineEdit.setText( str(round(mag, 2)))
             self.frame = np.array([accX, accY, accZ, angX, angY, angZ])
             self.checkMoving(mag)
+        else:
+            print(f"[ SIGNAL ] - cannot handle signal \'{signal}\'")
 
 
 class SignalBthConn():
@@ -179,54 +181,6 @@ class SignalBthConn():
             # if (self.dataCollector and not self.dataCollector.pauseHandling):
             #     self.dataCollector.handleNewSignal(signal)
 
-class DataCollector():
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.newDataFig = []
-        self.threshold = 5
-        self.recording = False
-        self.recordedDataFigs = []
-        self.onRecordData = []
-        self.pauseHandling = False
-    
-    @staticmethod
-    def parseData(signal) -> np.ndarray:
-        gx = int(signal.split(' ')[0])
-        gy = int(signal.split(' ')[1])
-        gz = int(signal.split(' ')[2])
-        return np.array([gx, gy, gz])
-    
-    def overThreshold(self, frame: np.ndarray) -> bool:
-        return np.sqrt(frame.dot(frame)) > self.threshold
-    
-    def handleNewSignal(self, newSignal):
-        frame = DataCollector.parseData(newSignal)
-        if self.recording:
-            if self.overThreshold(frame):
-                self.onRecordData.append(frame) # Keep collecting data
-            else:
-                self.recording = False
-                self.recordedDataFigs.append(np.array(self.onRecordData))
-                print(np.array(self.onRecordData))
-                self.pauseHandling = True
-                print("End recording.")
-        else:
-            if self.overThreshold(frame):
-                self.recording = True # Start recording
-                print("Start recording...")
-                self.onRecordData = []
-                self.onRecordData.append(frame)
-            else:
-                self.recording = False # Unnecessary
-                pass
-
-    def stopCollecting(self):
-        pass
-        # self.dumpCollectedData()
-    
-    # def dumpCoollectedData()
-
 def main():
     app = QtWidgets.QApplication(sys.argv)
     dataCollectionWindow = CollectDataWindow()
@@ -238,5 +192,6 @@ def main():
 if __name__ == "__main__":
     #  "98:D3:81:FD:46:F2" BioExpG5-1
     #  "00:13:EF:00:27:9D" BioExpG5-2
+    #  "00:19:06:34:F0:FD" BioExpG5-3
     # dataCollector = DataCollector()
     main()
