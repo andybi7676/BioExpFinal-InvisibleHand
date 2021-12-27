@@ -27,12 +27,18 @@ class MainControlPanel(QtWidgets.QMainWindow):
         self.setupControl()
     
     def setupControl(self):
-        self.ui.initializePushButton.clicked.connect(self.setInitialize)
+        self.ui.initializeLeftPushButton.clicked.connect(self.setInitializeLeft)
+        self.ui.initializeRightPushButton.clicked.connect(self.setInitializeRight)
         pass
         
-    def setInitialize(self):
+    def setInitializeLeft(self):
+        self.left.angleOrigs = [0, 0, 0]
         self.left.initializationProgress = 0
         self.left.handleState  = 0
+    
+    def setInitializeRight(self):
+        self.right.inputOrigs = [0, 0, 0, 0, 0, 0]
+        self.right.initialzationProgress = 0
         self.right.handleState = 0
 
     def handleLeftSignal(self, signal: str) -> None:
@@ -83,7 +89,10 @@ class MainControlPanel(QtWidgets.QMainWindow):
     
     def updateUI(self):
         self.ui.accelerationValue.setText(str(self.curState.acceleration))
+        self.ui.accelerationSlider.setValue(self.curState.acceleration)
         self.ui.directionValue.setText(str(self.curState.direction))
+        self.ui.directionSlider.setValue(self.curState.direction)
+        self.ui.gearSlider.setValue(self.curState.activate)
         self.ui.gearSlider.setValue(self.curState.activate)
         self.ui.leftPushButton.setChecked(self.curState.left)
         self.ui.rightPushButton.setChecked(self.curState.right)
@@ -109,7 +118,7 @@ class LeftController():
         self.initializationProgress = 0
         self.angleOrigs = [0, 0, 0]
         self.dirAngleSeg = 10
-        self.accelAngleSeg = 12
+        self.accelAngleSeg = 10
         self.ui: Ui_MainWindow = None
         self.curState: State = None
 
@@ -117,21 +126,22 @@ class LeftController():
         # self.angleOrigs = [0, 0, 0]
         for i in range(len(signal)):
             self.angleOrigs[i] += signal[i] / INITIALIZE_LENGTH
-        self.initializationProgress += 1 / INITIALIZE_LENGTH * 100
-        self.ui.initializeProgressBar.setValue(round(self.initializationProgress))
-        if round(self.initializationProgress) == 100:
-            print(self.angleOrigs)
+        self.initializationProgress += 1
+        self.ui.initializeLeftProgressBar.setValue(round(self.initializationProgress / INITIALIZE_LENGTH * 100))
+        if self.initializationProgress == INITIALIZE_LENGTH:
+            print(f"[ LEFTHAND ] - Initialize value: {self.angleOrigs}")
             self.handleState  = 1
     
     def driving(self, signal: list):
-        self.curState.direction =     -( (signal[2] + self.dirAngleSeg/2   - self.angleOrigs[2]) // self.dirAngleSeg   )
-        self.curState.acceleration =  -( (signal[1] + self.accelAngleSeg/2 - self.angleOrigs[1]) // self.accelAngleSeg )
+        self.curState.direction =   min(max(-5, -int( (signal[2] + self.dirAngleSeg/2   - self.angleOrigs[2]) // self.dirAngleSeg ) ), 5)
+        self.curState.acceleration =  min(max(-5, -int((signal[1] + self.accelAngleSeg/2 - self.angleOrigs[1]) // self.accelAngleSeg) ), 5)
         pass
 
 class RightController():
     def __init__(self) -> None:
         self.handleState = -1
-        self.angleOrigs = [0, 0, 0]
+        self.inputOrigs = [0, 0, 0]
+        self.initializationProgress = 0
         self.curAction = []
         self.threshold = THRESHOLD_INIT
         self.acc_avg = ACC_AVG_INIT
@@ -143,6 +153,13 @@ class RightController():
         return self.duplicateStatic < STATIC_LIMIT
 
     def initializing(self, signal: list):
+        for i in range(len(signal)):
+            self.inputOrigs[i] += signal[i] / INITIALIZE_LENGTH
+        self.initializationProgress += 1
+        self.ui.initializeRightProgressBar.setValue(round(self.initializationProgress / INITIALIZE_LENGTH * 100))
+        if self.initializationProgress == INITIALIZE_LENGTH:
+            print(f"[ RIGHTHAND ] - Initialize value: {self.inputOrigs}")
+            self.handleState  = 1
         pass
     
     def driving(self, signal: list):
@@ -151,6 +168,7 @@ class RightController():
             self.curState.activate = 0
             self.curState.left     = False
             self.curState.right    = False
+            self.curAction.clear()
             return
         if abs(mag - self.acc_avg) > self.threshold:
             self.duplicateStatic = 0 # Is moving
@@ -158,19 +176,31 @@ class RightController():
             self.duplicateStatic = min(STATIC_LIMIT, self.duplicateStatic+1)
         # self.ui.movingCheckBox.setChecked(self.isMoving())
         if self.isMoving():
-            self.curAction.append(self.frame)
+            self.curAction.append(signal)
         if not self.isMoving():
             self.acc_avg = max(min(self.acc_avg*0.95 + mag*0.05, 1.0), 0.96)
             if len(self.curAction) > 0:
-                print(f"[ Action ] - An action data formed!, frame-length={len(self.curAction)}, className={self.className}")
+                print(f"[ Action ] - An action data formed!, frame-length={len(self.curAction)}")
                 # print(np.array(self.curAction))
-                if len(self.curAction) > FRAME_LENGTH_THRESHOLD and self.isRecording: # Todo: open another thread for dump file.
-                    self.verrifyAction() # TODOs
+                if len(self.curAction) > FRAME_LENGTH_THRESHOLD: # Todo: open another thread for dump file.
+                    self.verifyAction() # TODOs
                 self.curAction.clear()
 
-    def verrifyAction():
-        pass
+    def verifyAction(self):
+        # ml
         
+        minAngZ = 90
+        maxAngZ = -90
+        for frame in self.curAction:
+            angZ = frame[-1] - self.inputOrigs[-1]
+            minAngZ = min(angZ, minAngZ)
+            maxAngZ = max(angZ, maxAngZ)
+        if maxAngZ > RIGHTHAND_LIGHT_ANGLE:
+            self.curState.left = True
+            print("[ RIGHTHAND ] - left light triggered!")
+        if minAngZ < -RIGHTHAND_LIGHT_ANGLE:
+            print("[ RIGHTHAND ] - right light triggered!")
+            self.curState.right = True        
 
 
 def main():
