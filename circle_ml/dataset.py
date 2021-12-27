@@ -21,7 +21,8 @@ class CircleDataset(Dataset):
 
     def __getitem__(self, index):
         data_array, label = self.data[index]
-        data_array = torch.from_numpy(data_array.astype(np.float))
+        data_array.dtype = 'float'
+        data_array = torch.from_numpy(data_array)
         return torch.FloatTensor(data_array), torch.tensor(label)
 
     def get_data(self, data_dir):
