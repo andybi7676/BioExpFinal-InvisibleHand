@@ -23,7 +23,7 @@ class CircleDataset(Dataset):
         data_array, label = self.data[index]
         data_array.dtype = 'float'
         data_array = torch.from_numpy(data_array)
-        return torch.FloatTensor(data_array), torch.tensor(label)
+        return torch.tensor(data_array), torch.tensor(label)
 
     def get_data(self, data_dir):
         data_list = []
