@@ -61,7 +61,7 @@ def main(
             data = data.to(device)
             labels = labels.cpu().numpy()
             preds = model(data)
-            preds = preds.cpu().numpy()
+            preds = preds.argmax(dim=-1).cpu().numpy()
             for pred, label in zip(preds, labels):
                 if pred == label:
                     accuracy += 1
