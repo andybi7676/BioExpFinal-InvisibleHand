@@ -60,6 +60,7 @@ def model_fn(batch, model, criterion, device):
     label = label.to(device)
 
     outs = model(data)
+    print(outs)
     loss = criterion(outs, label)
 
     return loss
