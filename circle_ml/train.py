@@ -28,7 +28,8 @@ def get_dataloader(data_dir, batch_size, n_workers):
     train_data = data_list
     for data in valid_data:
         for i in range(len(train_data)):
-            if train_data[i] == data:
+            equal_array = train_data[i] == data
+            if np.all(equal_array):
                 train_data.remove(train_data[i])
                 break
     
