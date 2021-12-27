@@ -8,6 +8,7 @@ import numpy as np
 import torch.nn.functional as F
 from torch.utils import data
 from torch.utils.data import Dataset
+from torch.nn.utils.rnn import pad_sequence
 
 
 class CircleDataset(Dataset):
@@ -56,3 +57,13 @@ def get_data(data_dir):
             else:
                 print(f"we got {label_dir} in label dir")
     return data_list
+
+
+def collate_batch(batch):
+    # Process features within a batch.
+    """Collate a batch of data."""
+    data_seq, label = zip(*batch)
+    # Because we train the model batch by batch, we need to pad the features in the same batch to make their lengths the same.
+    data_seq = pad_sequence(data_seq, batch_first=True, padding_value=-20)    # pad log 10^(-20) which is very small value.
+    # mel: (batch size, length, 40)
+    return data_seq, label

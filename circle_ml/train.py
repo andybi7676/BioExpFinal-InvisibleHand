@@ -15,7 +15,7 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from tensorboardX import SummaryWriter 
  
 
-from dataset import CircleDataset, get_data
+from dataset import CircleDataset, get_data, collate_batch
 from model import ResNetClassifier
 
 
@@ -41,7 +41,7 @@ def get_dataloader(data_dir, batch_size, n_workers):
         drop_last=True,
         num_workers=n_workers,
         pin_memory=True,
-        collate_fn=None,
+        collate_fn=collate_batch,
     )
     valid_loader = DataLoader(
         validset,
