@@ -66,4 +66,8 @@ def collate_batch(batch):
     # Because we train the model batch by batch, we need to pad the features in the same batch to make their lengths the same.
     data_seq = pad_sequence(data_seq, batch_first=True, padding_value=-20)    # pad log 10^(-20) which is very small value.
     # mel: (batch size, length, 40)
+    label = torch.cat(
+        [label[i].unsqueeze(0) for i in range(label.shape)],
+        dim=0,
+    )
     return data_seq, label
