@@ -512,7 +512,6 @@ class ResNetClassifier(nn.Module):
 
     def forward(self, input):
         input = input.permute(0, 2, 1).contiguous()
-        print(input.shape)
         mid = self.resnet(input)
         mid = self.pooling(mid)
         out = self.classifier(mid)
