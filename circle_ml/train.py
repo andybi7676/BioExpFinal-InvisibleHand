@@ -41,7 +41,7 @@ def get_dataloader(data_dir, batch_size, n_workers):
         drop_last=True,
         num_workers=n_workers,
         pin_memory=True,
-        collate_fn=None,
+        collate_fn=collate_batch,
     )
     valid_loader = DataLoader(
         validset,
