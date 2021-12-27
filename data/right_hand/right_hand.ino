@@ -3,7 +3,6 @@
 #include <Math.h>
 #include <SoftwareSerial.h>
 SoftwareSerial Bluetooth(2, 3); //2 <-> Tx , 3 <-> Rx
-//SoftwareSerial LeftHand(6, 7); //8 <-> Tx, 9 <-> Rx
 
 MPU6050 mpu6050(Wire);
 
@@ -19,7 +18,6 @@ void setup() {
   Serial.begin(9600);
   Wire.begin();
   Bluetooth.begin(9600);
-  //LeftHand.begin(9600);
   mpu6050.begin();
   mpu6050.calcGyroOffsets(true);
   while (Serial.available()) {
@@ -63,13 +61,5 @@ void loop() {
     accY += mpu6050.getAccY();
     accZ += mpu6050.getAccZ();
     count++;
-  }
-  if (Serial.available()) {
-    l = Serial.read();
-    l_signal += l;
-    if (l == '\n') {
-      Serial.print(l_signal);
-      l_signal = "";
-    }
   }
 }
