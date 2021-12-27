@@ -59,7 +59,7 @@ def main(
     for data, labels in tqdm(dataloader):
         with torch.no_grad():
             data = data.to(device)
-            label = label.to(device)
+            labels = labels.to(device)
             preds = model(data)
             preds = preds.cpu().numpy()
             for pred, label in zip(preds, labels):
