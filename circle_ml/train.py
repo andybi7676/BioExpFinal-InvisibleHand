@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import random
 import torch
 import math
 import argparse
@@ -14,19 +15,22 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from tensorboardX import SummaryWriter 
  
 
-from dataset import CircleDataset
+from dataset import CircleDataset, get_data
 from model import ResNetClassifier
 
 
 def get_dataloader(data_dir, batch_size, n_workers):
     """Generate dataloader"""
-    dataset = CircleDataset(data_dir)
 
     # Split dataset into training dataset and validation dataset
-    trainlen = int(0.9 * len(dataset))
-    lengths = [trainlen, len(dataset) - trainlen]
-    trainset, validset = random_split(dataset, lengths)
-
+    data_list = get_data(data_dir)
+    valid_data = random.sample(data_list, k=int(0.1 * len(data_list)))
+    train_data = data_list
+    for data in valid_data:
+        train_data.remove(data)
+    
+    trainset = CircleDataset(train_data)
+    validset = CircleDataset(valid_data, augmentation=False)
     train_loader = DataLoader(
         trainset,
         batch_size=batch_size,
@@ -38,7 +42,7 @@ def get_dataloader(data_dir, batch_size, n_workers):
     )
     valid_loader = DataLoader(
         validset,
-        batch_size=batch_size,
+        batch_size=1,
         num_workers=n_workers,
         drop_last=True,
         pin_memory=True,
@@ -55,14 +59,14 @@ def get_dataloader(data_dir, batch_size, n_workers):
 def model_fn(batch, model, criterion, device):
     """Forward a batch through the model."""
 
-    data, label = batch
+    data, labels = batch
     data = data.to(device)
-    label = label.to(device)
+    labels = labels.to(device)
 
     outs = model(data)
-    loss = criterion(outs, label)
+    loss = criterion(outs, labels)
 
-    return loss
+    return loss, outs, labels
 
 
 """# Validate
@@ -76,10 +80,15 @@ def valid(dataloader, model, criterion, device):
     running_loss = 0.0
     pbar = tqdm(total=len(dataloader.dataset), ncols=0, desc="Valid", unit=" uttr")
 
+    accuracy = 0
     for i, batch in enumerate(dataloader):
         with torch.no_grad():
-            loss = model_fn(batch, model, criterion, device)
+            loss, outs, labels = model_fn(batch, model, criterion, device)
             running_loss += loss.item()
+            preds = outs.argmax(dim=-1).cpu().numpy()
+            for pred, label in zip(preds, labels):
+                if pred == label:
+                    accuracy += 1
 
         pbar.update(dataloader.batch_size)
         pbar.set_postfix(
@@ -88,6 +97,8 @@ def valid(dataloader, model, criterion, device):
 
     pbar.close()
     model.train()
+    accuracy /= len(dataloader)
+    print(f"[Info]: We got accuracy {accuracy} in {len(dataloader)} sequences!",flush = True) 
 
     return running_loss / len(dataloader)
 
@@ -156,7 +167,7 @@ def main(
             train_iterator = iter(train_loader)
             batch = next(train_iterator)
 
-        loss = model_fn(batch, model, criterion, device)
+        loss, _, _ = model_fn(batch, model, criterion, device)
         batch_loss = loss.item()
         writer.add_scalar('training_loss', loss, step)
 
