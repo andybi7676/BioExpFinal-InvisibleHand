@@ -29,7 +29,7 @@ def get_dataloader(data_dir, batch_size, n_workers):
     for data in valid_data:
         for i in range(len(train_data)):
             if np.all(train_data[i][0] == data[0]):
-                train_data.remove(train_data[i])
+                train_data.pop(i)
                 break
     
     trainset = CircleDataset(train_data)
