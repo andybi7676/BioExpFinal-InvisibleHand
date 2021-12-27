@@ -113,7 +113,7 @@ class CollectDataWindow(QtWidgets.QMainWindow):
         self.ui.sigRcvConnCheckBox.setChecked(False)
     
     def handleSignal(self, signal: str):
-        if len(signal.split(' ')) > 5:
+        if len(signal.split(' ')) == 6:
             # Read parse valid signal string to the corresponding values. (accX, accY, accZ => accelerations; angX, angY, angZ => angle of three dimensions).
             accX = int(signal.split(' ')[0]) / ACC_PRECISION_FACTOR
             accY = int(signal.split(' ')[1]) / ACC_PRECISION_FACTOR
