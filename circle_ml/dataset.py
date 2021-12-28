@@ -40,13 +40,15 @@ class CircleDataset(Dataset):
         return torch.FloatTensor(data_array), torch.tensor(label)
 
 
-def get_data(data_dir):
+def get_data(data_dir, three_dim=False):
     data_list = []
     for label_dir in os.listdir(data_dir):
         label_path = os.path.join(data_dir, label_dir)
         for data in sorted(os.listdir(label_path)):
             data_path = os.path.join(label_path, data)
             data_array = np.load(data_path)
+            if three_dim:
+                data_array = data_array[:, 0:3]
             data_array = data_array.astype(np.float32)
             if label_dir.endswith('forward'):
                 data_list.append((data_array, 0))

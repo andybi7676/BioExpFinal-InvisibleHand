@@ -19,11 +19,11 @@ from dataset import CircleDataset, get_data, collate_batch
 from model import ResNetClassifier
 
 
-def get_dataloader(data_dir, batch_size, n_workers):
+def get_dataloader(data_dir, batch_size, n_workers, three_dim):
     """Generate dataloader"""
 
     # Split dataset into training dataset and validation dataset
-    data_list = get_data(data_dir)
+    data_list = get_data(data_dir, three_dim)
     valid_data = random.sample(data_list, k=int(0.1 * len(data_list)))
     train_data = data_list
     for data in valid_data:
@@ -115,21 +115,24 @@ def main(
     batch_size,
     n_workers,
     epochs,
+    three_dim,
 ):
     """Main function."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"[Info]: Use {device} now!")
 
-    train_loader, valid_loader = get_dataloader(data_dir, batch_size, n_workers)
+    three_dim = True if three_dim == 1 else False
+    train_loader, valid_loader = get_dataloader(data_dir, batch_size, n_workers, three_dim)
     train_iterator = iter(train_loader)
     print(f"[Info]: Finish loading data!",flush = True)
 
     valid_steps = len(train_loader)
     save_steps = valid_steps
     total_steps = valid_steps * epochs
+    input_chan = 3 if three_dim else 6
     model = ResNetClassifier(
         label_num=3,
-        in_channels=[6, 16, 16],
+        in_channels=[input_chan, 16, 16],
         out_channels=[16, 16, 8],
         downsample_scales=[1, 1, 1],
         kernel_size=3,
@@ -225,5 +228,7 @@ if __name__ == "__main__":
                         default=1,  help='training batch size')
     parser.add_argument('--epochs', '-e', metavar='VALID', type=int,
                         default=100,  help='training segment length')
+    parser.add_argument('--three_dim', '-t', metavar='DIM', type=int,
+                        default=0,  help='take sequence dimension')
     args = parser.parse_args()
     main(**vars(args))
