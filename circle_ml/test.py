@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from tqdm.notebook import tqdm
 from multiprocessing import cpu_count
 
-from dataset import CircleDataset
+from dataset import CircleDataset, get_data
 from model import ResNetClassifier
 
 
@@ -23,7 +23,8 @@ def main(
     print(f"[Info]: Use {device} now!")
 
     data_dir = os.path.abspath(data_dir)
-    dataset = CircleDataset(data_dir, augmentation=False)
+    data_list = get_data(data_dir)
+    dataset = CircleDataset(data_list, augmentation=False)
     dataloader = DataLoader(
         dataset,
         batch_size=1,

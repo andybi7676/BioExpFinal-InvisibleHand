@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import random
 import torch
 import math
 import argparse
@@ -14,19 +15,25 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from tensorboardX import SummaryWriter 
  
 
-from dataset import CircleDataset
+from dataset import CircleDataset, get_data, collate_batch
 from model import ResNetClassifier
 
 
-def get_dataloader(data_dir, batch_size, n_workers):
+def get_dataloader(data_dir, batch_size, n_workers, three_dim):
     """Generate dataloader"""
-    dataset = CircleDataset(data_dir)
 
     # Split dataset into training dataset and validation dataset
-    trainlen = int(0.9 * len(dataset))
-    lengths = [trainlen, len(dataset) - trainlen]
-    trainset, validset = random_split(dataset, lengths)
-
+    data_list = get_data(data_dir, three_dim)
+    valid_data = random.sample(data_list, k=int(0.1 * len(data_list)))
+    train_data = data_list
+    for data in valid_data:
+        for i in range(len(train_data)):
+            if np.all(train_data[i][0] == data[0]):
+                train_data.pop(i)
+                break
+    
+    trainset = CircleDataset(train_data)
+    validset = CircleDataset(valid_data, augmentation=False)
     train_loader = DataLoader(
         trainset,
         batch_size=batch_size,
@@ -34,11 +41,11 @@ def get_dataloader(data_dir, batch_size, n_workers):
         drop_last=True,
         num_workers=n_workers,
         pin_memory=True,
-        collate_fn=None,
+        collate_fn=collate_batch,
     )
     valid_loader = DataLoader(
         validset,
-        batch_size=batch_size,
+        batch_size=1,
         num_workers=n_workers,
         drop_last=True,
         pin_memory=True,
@@ -55,14 +62,14 @@ def get_dataloader(data_dir, batch_size, n_workers):
 def model_fn(batch, model, criterion, device):
     """Forward a batch through the model."""
 
-    data, label = batch
+    data, labels = batch
     data = data.to(device)
-    label = label.to(device)
+    labels = labels.to(device)
 
     outs = model(data)
-    loss = criterion(outs, label)
+    loss = criterion(outs, labels)
 
-    return loss
+    return loss, outs, labels
 
 
 """# Validate
@@ -76,10 +83,15 @@ def valid(dataloader, model, criterion, device):
     running_loss = 0.0
     pbar = tqdm(total=len(dataloader.dataset), ncols=0, desc="Valid", unit=" uttr")
 
+    accuracy = 0
     for i, batch in enumerate(dataloader):
         with torch.no_grad():
-            loss = model_fn(batch, model, criterion, device)
+            loss, outs, labels = model_fn(batch, model, criterion, device)
             running_loss += loss.item()
+            preds = outs.argmax(dim=-1).cpu().numpy()
+            for pred, label in zip(preds, labels):
+                if pred == label:
+                    accuracy += 1
 
         pbar.update(dataloader.batch_size)
         pbar.set_postfix(
@@ -88,6 +100,8 @@ def valid(dataloader, model, criterion, device):
 
     pbar.close()
     model.train()
+    accuracy /= len(dataloader)
+    print(f"[Info]: We got accuracy {accuracy} in {len(dataloader)} sequences!",flush = True) 
 
     return running_loss / len(dataloader)
 
@@ -101,21 +115,24 @@ def main(
     batch_size,
     n_workers,
     epochs,
+    three_dim,
 ):
     """Main function."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"[Info]: Use {device} now!")
 
-    train_loader, valid_loader = get_dataloader(data_dir, batch_size, n_workers)
+    three_dim = True if three_dim == 1 else False
+    train_loader, valid_loader = get_dataloader(data_dir, batch_size, n_workers, three_dim)
     train_iterator = iter(train_loader)
     print(f"[Info]: Finish loading data!",flush = True)
 
     valid_steps = len(train_loader)
     save_steps = valid_steps
     total_steps = valid_steps * epochs
+    input_chan = 3 if three_dim else 6
     model = ResNetClassifier(
         label_num=3,
-        in_channels=[6, 16, 16],
+        in_channels=[input_chan, 16, 16],
         out_channels=[16, 16, 8],
         downsample_scales=[1, 1, 1],
         kernel_size=3,
@@ -156,7 +173,7 @@ def main(
             train_iterator = iter(train_loader)
             batch = next(train_iterator)
 
-        loss = model_fn(batch, model, criterion, device)
+        loss, _, _ = model_fn(batch, model, criterion, device)
         batch_loss = loss.item()
         writer.add_scalar('training_loss', loss, step)
 
@@ -211,5 +228,7 @@ if __name__ == "__main__":
                         default=1,  help='training batch size')
     parser.add_argument('--epochs', '-e', metavar='VALID', type=int,
                         default=100,  help='training segment length')
+    parser.add_argument('--three_dim', '-t', metavar='DIM', type=int,
+                        default=0,  help='take sequence dimension')
     args = parser.parse_args()
     main(**vars(args))
