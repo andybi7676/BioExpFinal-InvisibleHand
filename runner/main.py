@@ -133,8 +133,8 @@ class LeftController():
         self.handleState = -1 # wait for initialization
         self.initializationProgress = 0
         self.angleOrigs = [0, 0, 0]
-        self.dirAngleSeg = 10
-        self.accelAngleSeg = 10
+        self.dirAngleSeg = 8
+        self.accelAngleSeg = 9
         self.ui: Ui_MainWindow = None
         self.curState: State = None
 
@@ -153,6 +153,9 @@ class LeftController():
         accelAng = signal[1] - self.angleOrigs[1]
         self.curState.direction = -int(np.sign(dirAng) * min(5, abs(dirAng) // self.dirAngleSeg))
         self.curState.acceleration =  -int(np.sign(accelAng) * min(5, abs(accelAng) // self.accelAngleSeg))
+        if self.curState.direction == 0:
+            # Revise z orig angle
+            self.angleOrigs[2] = self.angleOrigs[2] * 0.97 + signal[2] * 0.03
         pass
 
 class RightController():
@@ -173,7 +176,7 @@ class RightController():
         print(f"[Info]: Use {self.device} now!")
         self.model = ResNetClassifier(
             label_num=3,
-            in_channels=[6, 16, 16],
+            in_channels=[3, 16, 16],
             out_channels=[16, 16, 8],
             downsample_scales=[1, 1, 1],
             kernel_size=3,
@@ -186,7 +189,7 @@ class RightController():
             nin_layers=0,
             stacks=[3, 3, 3],
         ).to(self.device)
-        model_path = os.path.join('../circle_ml/results', 'resnet.ckpt')
+        model_path = os.path.join('../circle_ml/results', 'resnet_three.ckpt')
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
     
     def isMoving(self) -> bool:
@@ -222,31 +225,51 @@ class RightController():
             if len(self.curAction) > 0:
                 print(f"[ Action ] - An action data formed!, frame-length={len(self.curAction)}")
                 # print(np.array(self.curAction))
-                if len(self.curAction) > FRAME_LENGTH_THRESHOLD: # Todo: open another thread for dump file.
+                if len(self.curAction) > VERIFICATION_FRAME_LENGTH_THRESHOLD: # Todo: open another thread for dump file.
                     self.verifyAction() # TODOs
                 self.curAction.clear()
 
     def verifyAction(self):
         # ml
-        with torch.no_grad():
-            data_array = np.array([self.curAction])
-            data_array = data_array.astype(np.float32)
-            data_array = torch.from_numpy(data_array)
-            
-            logits = self.model(torch.FloatTensor(data_array).to(self.device))
-            label = logits.argmax(dim=-1).cpu().numpy()
-            print(label)
-
         minAngZ = 90
         maxAngZ = -90
+        minAngY = 90
+        maxAngY = -90
+        minAccY = 1000
+        maxAccY = -1000
         for frame in self.curAction:
             angZ = frame[-1] - self.inputOrigs[-1]
+            angY = frame[-2] - self.inputOrigs[-2]
+            accY = frame[1]  - self.inputOrigs[1]
             minAngZ = min(angZ, minAngZ)
             maxAngZ = max(angZ, maxAngZ)
-        if maxAngZ > RIGHTHAND_LIGHT_ANGLE:
+            minAngY = min(angY, minAngY)
+            maxAngY = max(angY, maxAngY)
+            minAccY = min(accY, minAccY)
+            maxAccY = max(accY, maxAccY)
+        # print(f"({maxAccY}, {minAccY}, {maxAngY}, {minAngY}, {maxAngZ}, {minAngZ})")
+        if maxAngY - minAngY > RIGHTHAND_LIGHT_OR_GEAR_ANGLE and len(self.curAction) > ML_FRAME_LENGTH_THRESHOLD: 
+            print("[ RIGHTHAND ] - Delta of angle Y too large, enter ml gear mode verification!")
+            with torch.no_grad():
+                data_array = np.array([self.curAction])[:, :, 0:3]
+                data_array = data_array.astype(np.float32)
+                data_array = torch.from_numpy(data_array)
+                
+                logits = self.model(torch.FloatTensor(data_array).to(self.device))
+                label = int(logits.argmax(dim=-1).cpu().numpy()[0])
+                if label == 0:
+                    self.curState.activate = 1
+                    print("[ RIGHTHAND ] - Set gear mode to \'FORWARD\'!")
+                    return
+                elif label == 1:
+                    self.curState.activate = -1
+                    print("[ RIGHTHAND ] - Set gear mode to \'BACKWARD\'!")
+                    return
+            return
+        if maxAngZ > RIGHTHAND_LIGHT_ANGLE and maxAccY > RIGHTHAND_LIGHT_ACC:
             self.curState.left = not self.curState.left
             print("[ RIGHTHAND ] - left light triggered!")
-        if minAngZ < -RIGHTHAND_LIGHT_ANGLE:
+        if minAngZ < -RIGHTHAND_LIGHT_ANGLE and minAccY < -RIGHTHAND_LIGHT_ACC:
             print("[ RIGHTHAND ] - right light triggered!")
             self.curState.right =  not self.curState.right       
 

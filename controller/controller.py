@@ -107,8 +107,8 @@ class DecisionSenderBthConn():
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    bthSender = DecisionSenderBthConn("98:D3:81:FD:46:F2")
-    # bthSender = DecisionSenderBthConn("00:13:EF:00:27:9D")
+    # bthSender = DecisionSenderBthConn("98:D3:81:FD:46:F2")
+    bthSender = DecisionSenderBthConn("00:13:EF:00:27:9D")
     window = ControlPanel(bthSender)
     window.show()
     sys.exit(app.exec_())
